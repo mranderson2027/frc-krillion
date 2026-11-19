@@ -95,11 +95,12 @@ summary{grid-template-columns:26px minmax(0,1fr) 48px}summary .dots{display:none
     <form id="nameForm">
       <label for="name">Your name</label>
       <div class="row"><input type="text" id="name" maxlength="30" autocomplete="nickname" placeholder="e.g. Sam from 4946" required><button id="go" type="submit">Start the dive</button></div>
+      <div id="nameMsg" class="try hide" role="status"></div>
     </form>
     <ul class="rules"><li>Keep guessing until you land an accepted answer or the 25 seconds run out.</li><li>Team prompts take a number or a team name.</li><li>Your first accepted answer locks in, so aim deep.</li></ul>
     <div class="tiers" id="tierKey"></div>
   </div>
-  <div class="panel"><h2>Leaderboard</h2><div id="boardStart" class="muted">Loading scores…</div></div>
+  <div class="panel"><h2>Leaderboard</h2><p class="muted" style="margin:0">Everyone gets one dive. The leaderboard unlocks once you've finished yours.</p></div>
 </section>
 
 <section id="game" class="hide">
@@ -125,7 +126,8 @@ summary{grid-template-columns:26px minmax(0,1fr) 48px}summary .dots{display:none
     <div class="muted" id="resName"></div>
     <div class="score"><span class="num" id="total">0</span><span class="big" style="font-size:28px">points out of 700</span></div>
     <div id="saveMsg" class="note"></div>
-    <div class="row" style="margin-top:12px"><button id="copy" type="button">Copy result</button><button id="again" class="ghost" type="button">Dive again</button></div>
+    <div class="row" style="margin-top:12px"><button id="copy" type="button">Copy result</button></div>
+    <p class="note">One dive per player. Thanks for diving!</p>
   </div>
   <div class="panel"><h2>Your dive</h2>
     <table class="stack"><thead><tr><th>#</th><th>Prompt</th><th>Your answer</th><th>Tier</th><th class="r">Pts</th></tr></thead><tbody id="mine"></tbody></table>
@@ -225,12 +227,30 @@ $("tierKey").innerHTML = TIERS.map((t, i) => `<span class="chip ${cls(t)}">${t} 
 try { $("name").value = localStorage.getItem("frck-name") || ""; } catch (e) {}
 function show(id) { for (const s of ["start", "game", "results"]) $(s).classList.toggle("hide", s !== id); window.scrollTo(0, 0); }
 
-$("nameForm").addEventListener("submit", e => {
+const PLAYED_KEY = "frck-played-v1";
+let myRunId = null;
+function nameMsg(m) { $("nameMsg").textContent = m; $("nameMsg").classList.toggle("hide", !m); }
+async function api(body) {
+  const res = await fetch(SCORES_URL, {method: "POST", headers: {"Content-Type": "text/plain;charset=utf-8"}, body: JSON.stringify(body)});
+  return res.json();
+}
+$("nameForm").addEventListener("submit", async e => {
   e.preventDefault();
   const n = $("name").value.trim().slice(0, 30);
   if (!n) return;
+  if (!SCORES_URL) { nameMsg("The scoreboard isn't set up yet."); return; }
+  $("go").disabled = true; nameMsg("");
+  const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  try {
+    const r = await api({type: "start", id, name: n});
+    if (!r.ok) {
+      nameMsg(r.error === "name_taken" ? "Someone named \"" + n + "\" has already played. Each player gets one dive: if that wasn't you, add your team number to your name." : "Couldn't start your dive. Try again in a moment.");
+      $("go").disabled = false; return;
+    }
+  } catch (err) { nameMsg("Can't reach the scoreboard right now. Check your connection and try again."); $("go").disabled = false; return; }
+  myRunId = id;
   state.name = n; state.i = 0; state.res = [];
-  try { localStorage.setItem("frck-name", n); } catch (e) {}
+  try { localStorage.setItem("frck-name", n); localStorage.setItem(PLAYED_KEY, JSON.stringify({id, name: n, res: null})); } catch (err) {}
   show("game"); ask();
 });
 function ask() {
@@ -284,8 +304,8 @@ function next() {
 }
 
 /* ---------- results ---------- */
-let myRunId = null;
-function finish() {
+function finish() { renderResults(); saveRun(state.res.reduce((s, r) => s + r.p, 0)); }
+function renderResults() {
   const total = state.res.reduce((s, r) => s + r.p, 0);
   $("resName").textContent = state.name + "'s dive";
   $("total").textContent = total;
@@ -296,7 +316,6 @@ function finish() {
     return `<li><b>${esc(q.prompt)}:</b> <span class="chip t-OneinaKrillion">${esc(gem ? lab(gem) : "—")}</span> <span class="muted">Deep cuts: ${deep.map(a => esc(lab(a))).join(", ")}</span></li>`;
   }).join("");
   show("results");
-  saveRun(total);
 }
 function shareText() {
   const total = state.res.reduce((s, r) => s + r.p, 0);
@@ -307,14 +326,13 @@ $("copy").addEventListener("click", async () => {
   catch (e) { $("copy").textContent = "Copy blocked"; }
   setTimeout(() => $("copy").textContent = "Copy result", 1800);
 });
-$("again").addEventListener("click", () => { show("start"); $("name").focus(); });
 
 /* ---------- shared leaderboard (Google Sheet via Apps Script) ---------- */
 let allRuns = [], polling = null;
 function renderBoards(msg) {
-  if (msg) { $("board").textContent = msg; $("boardStart").textContent = msg; return; }
+  if (msg) { $("board").textContent = msg; return; }
   const runs = allRuns.slice().sort((a, b) => b.total - a.total || String(a.at).localeCompare(String(b.at)));
-  if (!runs.length) { $("board").textContent = "No scores yet. Be the first."; $("boardStart").textContent = "No scores yet. Be the first."; return; }
+  if (!runs.length) { $("board").textContent = "No finished dives yet."; return; }
   const row = (r, i) => {
     const dots = `<span class="dots">${(r.ans || []).map(a => `<b class="${cls(a.tier)}" title="${esc(a.tier)}"></b>`).join("")}</span>`;
     const rows = (r.ans || []).map((a, j) => `<tr><td data-l="Prompt">${esc(DATA[j] ? DATA[j].prompt : "")}</td><td data-l="Answer">${esc(a.match || a.input || "—")}</td><td data-l="Tier"><span class="chip ${cls(a.tier)}">${esc(a.tier === "Miss" ? "Time's up" : a.tier)}</span></td><td class="r" data-l="Pts">${+a.p || 0}</td></tr>`).join("");
@@ -323,7 +341,6 @@ function renderBoards(msg) {
       <table class="stack" style="margin:4px 0 12px"><thead><tr><th>Prompt</th><th>Answer</th><th>Tier</th><th class="r">Pts</th></tr></thead><tbody>${rows}</tbody></table></details>`;
   };
   $("board").innerHTML = runs.map(row).join("");
-  $("boardStart").innerHTML = runs.slice(0, 5).map(row).join("") + (runs.length > 5 ? `<p class="muted">${runs.length} dives so far. Finish a dive to see them all.</p>` : "");
 }
 function clean(list) {
   return (Array.isArray(list) ? list : []).filter(r => r && typeof r === "object").map(r => ({
@@ -331,30 +348,39 @@ function clean(list) {
     ans: (Array.isArray(r.ans) ? r.ans : []).slice(0, 7).map(a => ({input: String(a.input || "").slice(0, 60), match: String(a.match || "").slice(0, 80), tier: String(a.tier || "Miss"), p: +a.p || 0}))}));
 }
 async function loadScores() {
-  if (!SCORES_URL) { renderBoards("The shared leaderboard isn't set up yet (see README)."); return; }
+  if (!SCORES_URL || !myRunId) return;
   try {
-    const res = await fetch(SCORES_URL + "?t=" + Date.now());
+    const res = await fetch(SCORES_URL + "?action=board&id=" + encodeURIComponent(myRunId) + "&t=" + Date.now());
     const json = await res.json();
+    if (json.error) { renderBoards("The leaderboard unlocks once your dive is saved."); return; }
     allRuns = clean(json.runs); renderBoards();
   } catch (e) { if (!allRuns.length) renderBoards("Can't reach the scores right now."); }
 }
 async function saveRun(total) {
-  const run = {id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7), name: state.name, total, at: new Date().toISOString(),
-    ans: state.res.map(r => ({input: r.input, match: r.match, tier: r.tier, p: r.p}))};
-  myRunId = run.id;
-  allRuns = allRuns.filter(r => r.id !== run.id).concat(clean([run])); renderBoards();
-  if (!SCORES_URL) { $("saveMsg").textContent = "Scores aren't being saved yet: the leaderboard hasn't been set up."; return; }
+  const ans = state.res.map(r => ({input: r.input, match: r.match, tier: r.tier, p: r.p}));
+  try { localStorage.setItem(PLAYED_KEY, JSON.stringify({id: myRunId, name: state.name, res: state.res})); } catch (e) {}
   $("saveMsg").textContent = "Saving your score…";
   try {
-    const res = await fetch(SCORES_URL, {method: "POST", headers: {"Content-Type": "text/plain;charset=utf-8"}, body: JSON.stringify(run)});
-    const json = await res.json();
-    if (!json.ok) throw new Error(json.error || "rejected");
+    const json = await api({type: "finish", id: myRunId, ans});
+    if (!json.ok && json.error !== "already_finished") throw new Error(json.error || "rejected");
     $("saveMsg").textContent = "Saved to the leaderboard.";
-  } catch (e) { $("saveMsg").textContent = "Your score couldn't be saved right now. Try Dive again later."; }
+  } catch (e) { $("saveMsg").textContent = "Your score couldn't be saved right now. Reopen this page later and it will try again."; }
   loadScores();
 }
-loadScores();
-polling = setInterval(() => { if (!document.hidden && $("game").classList.contains("hide")) loadScores(); }, 30000);
+/* returning player: one dive per device */
+{
+  let saved = null;
+  try { saved = JSON.parse(localStorage.getItem(PLAYED_KEY) || "null"); } catch (e) {}
+  if (saved && saved.id) {
+    myRunId = saved.id; state.name = saved.name || "You";
+    if (Array.isArray(saved.res) && saved.res.length === DATA.length) {
+      state.res = saved.res; renderResults(); saveRun(state.res.reduce((s, r) => s + r.p, 0));
+    } else {
+      $("nameForm").innerHTML = `<p style="margin:0"><b>You already started a dive on this device as ${esc(state.name)}.</b> Each player gets one dive, and leaving partway through counts as your dive.</p>`;
+    }
+  }
+}
+setInterval(() => { if (!document.hidden && !$("results").classList.contains("hide")) loadScores(); }, 30000);
 }
 </script>
 </body>
