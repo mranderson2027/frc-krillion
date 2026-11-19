@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FRC Krillion</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* VOICE: a dive, playful but tidy; short lines, big numbers.
+   IDEA: a depth gauge on a dive; each question takes you deeper, rarer answers glow brighter.
+   PICTURE: the ocean column with seven depth marks and a krill swarm; on play, the gauge is the board.
+   COLOUR and TYPE: sea teal to abyss, krill coral accent, tier lights; Barlow Condensed + Barlow.
+   LAYOUT: one centered column; gauge left of the question on wide screens, above it on phones. */
+:root{color-scheme:dark;--top:#0d6578;--mid:#07394a;--deep:#031a23;--ink:#eaf6f7;--dim:#9cc3c9;--krill:#ff7a59;--line:rgba(234,246,247,.14);--card:rgba(3,26,35,.62);
+--Plankton:#9fc3ad;--Schooler:#43c6cf;--Rare:#5b95ff;--DeepCut:#b08cff;--Krill:#ffd166;--Wrong:#ff6b7f}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;color:var(--ink);font:16px/1.5 Barlow,system-ui,sans-serif;overflow-x:clip;min-height:100vh;
+background:linear-gradient(180deg,var(--top) 0,var(--mid) 420px,var(--deep) 1100px) no-repeat,var(--deep)}
+html{background:var(--deep)}
+h1,h2,.num,.big{font-family:"Barlow Condensed",Barlow,sans-serif}
+.wrap{max-width:880px;margin:0 auto;padding:clamp(18px,4vw,40px) max(4vw,16px) 48px}
+.hero{position:relative;border-radius:22px;overflow:hidden;min-height:300px;display:grid;align-content:end;padding:28px;background:linear-gradient(180deg,#127b8f,#063445)}
+.hero svg{position:absolute;inset:0;width:100%;height:100%}
+.hero>div{position:relative}
+h1{font-size:clamp(44px,9vw,76px);line-height:.95;margin:0;letter-spacing:.5px}
+h1 span{color:var(--krill)}
+.sub{color:var(--dim);margin:8px 0 0;max-width:52ch}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:clamp(16px,3vw,26px);margin-top:18px;backdrop-filter:blur(6px)}
+h2{font-size:28px;line-height:1.1;margin:0 0 10px}
+label{display:block;font-weight:600;margin-bottom:6px}
+input[type=text]{width:100%;font:inherit;font-size:18px;padding:12px 14px;border-radius:12px;border:2px solid var(--line);background:rgba(0,0,0,.28);color:var(--ink);min-height:48px}
+input:focus,button:focus-visible,summary:focus-visible{outline:3px solid var(--krill);outline-offset:2px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.row input{flex:1 1 220px}
+button{font:600 17px Barlow,sans-serif;border:0;border-radius:12px;padding:12px 20px;min-height:48px;cursor:pointer;background:var(--krill);color:#2a0d05}
+button.ghost{background:transparent;color:var(--ink);border:2px solid var(--line)}
+button:disabled{opacity:.45;cursor:default}
+.rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr));gap:10px;margin:14px 0 0;padding:0;list-style:none;color:var(--dim)}
+.rules li{border-left:3px solid var(--line);padding-left:10px}
+.tiers{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.chip{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:3px 10px;font-size:14px;font-weight:600;color:#071e26;white-space:nowrap}
+.t-Plankton{background:var(--Plankton)}.t-Schooler{background:var(--Schooler)}.t-Rare{background:var(--Rare)}.t-DeepCut{background:var(--DeepCut)}.t-OneinaKrillion{background:var(--Krill)}.t-Wrong,.t-Miss{background:var(--Wrong)}
+.play{display:grid;grid-template-columns:120px minmax(0,1fr);gap:18px;margin-top:18px}
+.gauge{position:relative;border-radius:16px;background:linear-gradient(180deg,#14839a,#02121a);min-height:420px;border:1px solid var(--line)}
+.gauge svg{position:absolute;inset:0;width:100%;height:100%}
+.qnum{color:var(--dim);font-weight:600}
+.prompt{font-family:"Barlow Condensed",sans-serif;font-size:clamp(30px,5vw,44px);line-height:1.05;margin:6px 0 18px;text-wrap:balance}
+.timer{height:10px;border-radius:99px;background:rgba(255,255,255,.1);overflow:hidden;margin-bottom:6px}
+.timer i{display:block;height:100%;background:var(--krill);width:100%}
+.secs{font-family:"Barlow Condensed";font-size:22px;color:var(--dim)}
+.reveal{margin-top:16px;border-radius:14px;padding:16px;border:1px solid var(--line);background:rgba(0,0,0,.25)}
+.reveal .big{font-size:40px;line-height:1}
+.muted{color:var(--dim);font-size:15px}
+.try{margin-top:10px;padding:10px 14px;border-radius:12px;background:rgba(255,107,127,.16);border:1px solid rgba(255,107,127,.5);color:#ffd5db;font-weight:600}
+.score{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+.score .num{font-size:clamp(64px,14vw,110px);line-height:.9;color:var(--krill)}
+table{width:100%;border-collapse:collapse;font-size:15px}
+th,td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--dim);font-weight:600}
+td.r,th.r{text-align:right;white-space:nowrap}
+.dots{display:inline-flex;gap:3px;vertical-align:middle}
+.dots b{width:12px;height:12px;border-radius:3px;display:inline-block}
+details{border-bottom:1px solid var(--line)}
+summary{display:grid;grid-template-columns:32px minmax(0,1fr) auto 56px;gap:10px;align-items:center;padding:10px 4px;cursor:pointer;list-style:none;min-height:44px}
+summary::-webkit-details-marker{display:none}
+summary .nm{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+summary .num{font-size:24px;text-align:right}
+details[open] summary{background:rgba(255,255,255,.04)}
+.me{color:var(--krill)}
+.gems li{margin:6px 0}
+.note{font-size:14px;color:var(--dim);margin-top:10px}
+.hide{display:none!important}
+@media(max-width:600px){.play{grid-template-columns:1fr}.gauge{min-height:84px}table{font-size:13px}
+.stack thead{display:none}.stack tr{display:grid;padding-block:8px}.stack td{display:flow-root;border:0;padding:3px 0;padding-inline-start:7em;text-align:start}.stack td::before{content:attr(data-l);float:inline-start;width:6.5em;margin-inline-start:-7em;color:var(--dim)}
+summary{grid-template-columns:26px minmax(0,1fr) 48px}summary .dots{display:none}#mine td[data-l="#"]{display:none}#mine td[data-l=Prompt]{font-weight:600;padding-inline-start:0}#mine td[data-l=Prompt]::before{display:none}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<section id="start">
+  <div class="hero">
+    <svg viewBox="0 0 800 300" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <defs><linearGradient id="ray" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".22"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+      <radialGradient id="k" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ffb199"/><stop offset="1" stop-color="#ff7a59"/></radialGradient></defs>
+      <polygon points="120,0 200,0 330,300 180,300" fill="url(#ray)"/><polygon points="430,0 480,0 600,300 500,300" fill="url(#ray)"/><polygon points="650,0 690,0 780,300 720,300" fill="url(#ray)"/>
+      <g id="swarm"></g>
+      <path d="M0 270 Q120 240 240 268 T480 262 T800 258 V300 H0Z" fill="#031a23" opacity=".7"/>
+    </svg>
+    <div><h1>FRC <span>Krillion</span></h1><p class="sub">Seven FRC prompts, 25 seconds each. The rarer your right answer, the deeper you dive.</p></div>
+  </div>
+  <div class="panel">
+    <form id="nameForm">
+      <label for="name">Your name</label>
+      <div class="row"><input type="text" id="name" maxlength="30" autocomplete="nickname" placeholder="e.g. Sam from 4946" required><button id="go" type="submit">Start the dive</button></div>
+    </form>
+    <ul class="rules"><li>Keep guessing until you land an accepted answer or the 25 seconds run out.</li><li>Team prompts take a number or a team name.</li><li>Your first accepted answer locks in, so aim deep.</li></ul>
+    <div class="tiers" id="tierKey"></div>
+  </div>
+  <div class="panel"><h2>Leaderboard</h2><div id="boardStart" class="muted">Loading scores…</div></div>
+</section>
+
+<section id="game" class="hide">
+  <div class="play">
+    <div class="gauge"><svg id="gauge" aria-label="Dive depth"></svg></div>
+    <div class="panel" style="margin-top:0">
+      <div class="qnum" id="qnum"></div>
+      <div class="prompt" id="prompt"></div>
+      <div class="timer"><i id="bar"></i></div>
+      <div class="secs" id="secs">25</div>
+      <form id="ansForm" class="row" style="margin-top:12px">
+        <input type="text" id="ans" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Your answer" placeholder="Type your answer">
+        <button type="submit" id="submit">Submit</button>
+      </form>
+      <div id="tryMsg" class="try hide" role="status"></div>
+      <div id="reveal" class="reveal hide" aria-live="polite"></div>
+    </div>
+  </div>
+</section>
+
+<section id="results" class="hide">
+  <div class="panel">
+    <div class="muted" id="resName"></div>
+    <div class="score"><span class="num" id="total">0</span><span class="big" style="font-size:28px">points out of 700</span></div>
+    <div id="saveMsg" class="note"></div>
+    <div class="row" style="margin-top:12px"><button id="copy" type="button">Copy result</button><button id="again" class="ghost" type="button">Dive again</button></div>
+  </div>
+  <div class="panel"><h2>Your dive</h2>
+    <table class="stack"><thead><tr><th>#</th><th>Prompt</th><th>Your answer</th><th>Tier</th><th class="r">Pts</th></tr></thead><tbody id="mine"></tbody></table>
+  </div>
+  <div class="panel"><h2>What you could have said</h2><ul class="gems" id="gems"></ul></div>
+  <div class="panel"><h2>How everyone did</h2><p class="muted" style="margin-top:-4px">Tap a player to see their answers.</p><div id="board" class="muted">Loading scores…</div></div>
+</section>
+
+</div>
+<script>
+{
+/* Paste your Apps Script web app URL here (ends in /exec). Leave empty to play without a leaderboard. */
+const SCORES_URL = "https://script.google.com/macros/s/AKfycbyz5F5evx_z7Rs4ZE4BNCCnEA7sVRDXvdgNAtqx_qszeAE0ENct9mTtaXX6ORoMCFRa/exec";
+
+const DATA = [{"n":1,"prompt":"Name an FRC team with at least five blue banners","team":true,"a":[{"t":"254","al":["Cheesy Poofs","The Cheesy Poofs"],"tier":"Plankton","p":10,"note":""},{"t":"1678","al":["Citrus Circuits"],"tier":"Plankton","p":10,"note":""},{"t":"118","al":["Robonauts"],"tier":"Plankton","p":10,"note":""},{"t":"2056","al":["OP Robotics"],"tier":"Plankton","p":10,"note":""},{"t":"1114","al":["Simbotics"],"tier":"Plankton","p":10,"note":""},{"t":"1690","al":["Orbit"],"tier":"Plankton","p":10,"note":""},{"t":"148","al":["Robowranglers"],"tier":"Schooler","p":30,"note":""},{"t":"971","al":["Spartan Robotics"],"tier":"Schooler","p":30,"note":""},{"t":"2767","al":["Stryke Force"],"tier":"Schooler","p":30,"note":""},{"t":"6328","al":["Mechanical Advantage"],"tier":"Schooler","p":30,"note":""},{"t":"4414","al":["HighTide"],"tier":"Schooler","p":30,"note":""},{"t":"1323","al":["MadTown Robotics"],"tier":"Schooler","p":30,"note":""},{"t":"111","al":["WildStang"],"tier":"Schooler","p":30,"note":""},{"t":"67","al":["The HOT Team"],"tier":"Schooler","p":30,"note":""},{"t":"973","al":["Greybots"],"tier":"Schooler","p":30,"note":""},{"t":"2910","al":["Jack in the Bot"],"tier":"Schooler","p":30,"note":""},{"t":"33","al":["Killer Bees"],"tier":"Schooler","p":30,"note":""},{"t":"195","al":["CyberKnights"],"tier":"Rare","p":60,"note":""},{"t":"3476","al":["Code Orange"],"tier":"Rare","p":60,"note":""},{"t":"469","al":["Las Guerrillas"],"tier":"Rare","p":60,"note":""},{"t":"330","al":["Beach Bots","The Beach Bots"],"tier":"Rare","p":60,"note":""},{"t":"987","al":["HIGHROLLERS"],"tier":"Rare","p":60,"note":""},{"t":"217","al":["ThunderChickens"],"tier":"Rare","p":60,"note":""},{"t":"125","al":["NUTRONs"],"tier":"Rare","p":60,"note":""},{"t":"1538","al":["The Holy Cows"],"tier":"Rare","p":60,"note":""},{"t":"3310","al":["Black Hawk Robotics"],"tier":"Rare","p":60,"note":""},{"t":"4481","al":["Team Rembrandts"],"tier":"Rare","p":60,"note":""},{"t":"1241","al":["THEORY6"],"tier":"Rare","p":60,"note":""},{"t":"359","al":["Hawaiian Kids"],"tier":"Rare","p":60,"note":""},{"t":"27","al":["Team RUSH"],"tier":"Rare","p":60,"note":""},{"t":"1986","al":["Team Titanium"],"tier":"Rare","p":60,"note":""},{"t":"1477","al":["Texas Torque"],"tier":"Rare","p":60,"note":""},{"t":"16","al":["Bomb Squad"],"tier":"Deep Cut","p":85,"note":""},{"t":"233","al":["The Pink Team"],"tier":"Deep Cut","p":85,"note":""},{"t":"179","al":["Children of the Swamp"],"tier":"Deep Cut","p":85,"note":""},{"t":"2337","al":["EngiNERDs"],"tier":"Deep Cut","p":85,"note":""},{"t":"4613","al":["Barker Redbacks"],"tier":"Deep Cut","p":85,"note":""},{"t":"3132","al":["Thunder Down Under"],"tier":"Deep Cut","p":85,"note":""},{"t":"2481","al":["Roboteers"],"tier":"Deep Cut","p":85,"note":""},{"t":"1619","al":["Up-A-Creek Robotics"],"tier":"Deep Cut","p":85,"note":""},{"t":"503","al":["Frog Force"],"tier":"Deep Cut","p":85,"note":""},{"t":"365","al":["MOE","Miracle Workerz"],"tier":"Deep Cut","p":85,"note":""},{"t":"341","al":["Miss Daisy"],"tier":"Deep Cut","p":85,"note":""},{"t":"610","al":["Crescent Coyotes"],"tier":"Deep Cut","p":85,"note":""},{"t":"604","al":["Quixilver"],"tier":"Deep Cut","p":85,"note":""},{"t":"47","al":["Chief Delphi"],"tier":"Deep Cut","p":85,"note":""},{"t":"1816","al":["The Green Machine","\"The Green Machine\""],"tier":"Deep Cut","p":85,"note":""},{"t":"1902","al":["Exploding Bacon"],"tier":"Deep Cut","p":85,"note":""},{"t":"2834","al":["Bionic Black Hawks"],"tier":"Deep Cut","p":85,"note":""},{"t":"1311","al":["Kell Robotics"],"tier":"Deep Cut","p":85,"note":""},{"t":"191","al":["X-CATS"],"tier":"Deep Cut","p":85,"note":""},{"t":"177","al":["Bobcat Robotics"],"tier":"Deep Cut","p":85,"note":""},{"t":"71","al":["Team Hammond"],"tier":"One in a Krillion","p":100,"note":""}]},{"n":2,"prompt":"Name an FRC motor","team":false,"a":[{"t":"NEO","al":[],"tier":"Plankton","p":10,"note":""},{"t":"Kraken X60","al":["X60","Kraken"],"tier":"Plankton","p":10,"note":""},{"t":"Kraken X44","al":["X44"],"tier":"Plankton","p":10,"note":""},{"t":"CIM","al":[],"tier":"Plankton","p":10,"note":""},{"t":"Falcon 500","al":["Falcon"],"tier":"Plankton","p":10,"note":""},{"t":"NEO Vortex","al":["Vortex"],"tier":"Schooler","p":30,"note":""},{"t":"NEO 550","al":[],"tier":"Schooler","p":30,"note":""},{"t":"CTRE Minion","al":["Minion"],"tier":"Schooler","p":30,"note":""},{"t":"Mini CIM","al":["MiniCIM"],"tier":"Schooler","p":30,"note":""},{"t":"775pro","al":["775 Pro","VEX 775pro"],"tier":"Schooler","p":30,"note":""},{"t":"BAG motor","al":["BAG"],"tier":"Schooler","p":30,"note":""},{"t":"RS-775","al":["775","775 RedLine","RedLine"],"tier":"Rare","p":60,"note":""},{"t":"RS-550","al":["BaneBots 550","550"],"tier":"Rare","p":60,"note":""},{"t":"Window motor","al":["Denso window motor"],"tier":"Rare","p":60,"note":""},{"t":"AndyMark 9015","al":["9015"],"tier":"Rare","p":60,"note":""},{"t":"Venom","al":["Playing With Fusion Venom"],"tier":"Rare","p":60,"note":""},{"t":"Fisher-Price motor","al":["FP","Fisher Price"],"tier":"Rare","p":60,"note":""},{"t":"Globe motor","al":["Globe"],"tier":"Deep Cut","p":85,"note":""},{"t":"Van door motor","al":["Van door"],"tier":"Deep Cut","p":85,"note":""},{"t":"Drill motor","al":["Bosch drill","DeWalt drill"],"tier":"Deep Cut","p":85,"note":""},{"t":"Bosch seat motor","al":["Seat motor"],"tier":"Deep Cut","p":85,"note":""},{"t":"Denso throttle motor","al":["Throttle motor"],"tier":"Deep Cut","p":85,"note":""},{"t":"RS-540","al":["BaneBots 540"],"tier":"Deep Cut","p":85,"note":""},{"t":"AndyMark PG gearmotor","al":["PG71","PG27","PG188"],"tier":"Deep Cut","p":85,"note":""},{"t":"Snowblower motor","al":["Snow blower motor","snowblower"],"tier":"One in a Krillion","p":100,"note":""}]},{"n":3,"prompt":"Name an FRC regional that is no longer competed","team":false,"a":[{"t":"Pacific Northwest Regional","al":[],"tier":"Plankton","p":10,"note":""},{"t":"Chesapeake Regional","al":[],"tier":"Plankton","p":10,"note":""},{"t":"Lone Star Regional","al":[],"tier":"Plankton","p":10,"note":""},{"t":"Silicon Valley Regional","al":[],"tier":"Plankton","p":10,"note":""},{"t":"Boston Regional","al":[],"tier":"Plankton","p":10,"note":""},{"t":"Wisconsin Regional","al":[],"tier":"Plankton","p":10,"note":""},{"t":"Peachtree Regional","al":[],"tier":"Plankton","p":10,"note":""},{"t":"North Carolina Regional","al":[],"tier":"Schooler","p":30,"note":""},{"t":"Virginia Regional","al":["NASA/VCU Regional"],"tier":"Schooler","p":30,"note":""},{"t":"New Jersey Regional","al":[],"tier":"Schooler","p":30,"note":""},{"t":"Philadelphia Regional","al":[],"tier":"Schooler","p":30,"note":""},{"t":"Sacramento Regional","al":[],"tier":"Schooler","p":30,"note":""},{"t":"San Diego Regional","al":[],"tier":"Schooler","p":30,"note":""},{"t":"Los Angeles Regional","al":[],"tier":"Schooler","p":30,"note":""},{"t":"Detroit Regional","al":[],"tier":"Schooler","p":30,"note":""},{"t":"Greater Toronto East Regional","al":["GTR East"],"tier":"Schooler","p":30,"note":""},{"t":"Greater Toronto West Regional","al":["GTR West"],"tier":"Schooler","p":30,"note":""},{"t":"Israel Regional","al":[],"tier":"Schooler","p":30,"note":""},{"t":"Palmetto Regional","al":[],"tier":"Schooler","p":30,"note":""},{"t":"Connecticut Regional","al":[],"tier":"Schooler","p":30,"note":""},{"t":"Granite State Regional","al":["BAE Systems Granite State Regional"],"tier":"Schooler","p":30,"note":""},{"t":"WPI Regional","al":["Worcester"],"tier":"Rare","p":60,"note":""},{"t":"Pine Tree Regional","al":[],"tier":"Rare","p":60,"note":""},{"t":"Boilermaker Regional","al":[],"tier":"Rare","p":60,"note":""},{"t":"Crossroads Regional","al":[],"tier":"Rare","p":60,"note":""},{"t":"Alamo Regional","al":[],"tier":"Rare","p":60,"note":""},{"t":"Dallas Regional","al":[],"tier":"Rare","p":60,"note":""},{"t":"Queen City Regional","al":[],"tier":"Rare","p":60,"note":""},{"t":"Orange County Regional","al":[],"tier":"Rare","p":60,"note":""},{"t":"Ventura Regional","al":[],"tier":"Rare","p":60,"note":""},{"t":"Ventura County Regional","al":[],"tier":"Rare","p":60,"note":""},{"t":"Central Valley Regional","al":[],"tier":"Rare","p":60,"note":""},{"t":"Seattle Regional","al":[],"tier":"Rare","p":60,"note":""},{"t":"Washington DC Regional","al":["Greater DC Regional"],"tier":"Rare","p":60,"note":""},{"t":"Waterloo Regional","al":[],"tier":"Rare","p":60,"note":""},{"t":"Great Lakes Regional","al":[],"tier":"Rare","p":60,"note":""},{"t":"West Michigan Regional","al":[],"tier":"Rare","p":60,"note":""},{"t":"Oregon Regional","al":[],"tier":"Rare","p":60,"note":""},{"t":"Lone Star Central Regional","al":[],"tier":"Rare","p":60,"note":""},{"t":"Lone Star South Regional","al":[],"tier":"Rare","p":60,"note":""},{"t":"Seven Rivers Regional","al":[],"tier":"Rare","p":60,"note":""},{"t":"San Francisco Regional","al":[],"tier":"Rare","p":60,"note":""},{"t":"Aerospace Valley Regional","al":[],"tier":"Rare","p":60,"note":""},{"t":"Windsor Essex Great Lakes Regional","al":["WEGL"],"tier":"Deep Cut","p":85,"note":""},{"t":"Greater Toronto Central Regional","al":[],"tier":"Deep Cut","p":85,"note":""},{"t":"Greater Toronto Regional","al":[],"tier":"Deep Cut","p":85,"note":"Pre-split Toronto regional"},{"t":"Canadian Regional","al":[],"tier":"Deep Cut","p":85,"note":"2002, Mississauga"},{"t":"North Bay Regional","al":[],"tier":"Deep Cut","p":85,"note":""},{"t":"Autodesk Oregon Regional","al":[],"tier":"Deep Cut","p":85,"note":""},{"t":"Microsoft Seattle Regional","al":[],"tier":"Deep Cut","p":85,"note":""},{"t":"Central Washington Regional","al":[],"tier":"Deep Cut","p":85,"note":""},{"t":"Spokane Regional","al":[],"tier":"Deep Cut","p":85,"note":""},{"t":"Inland Empire Regional","al":[],"tier":"Deep Cut","p":85,"note":""},{"t":"Southern California Regional","al":[],"tier":"Deep Cut","p":85,"note":""},{"t":"UC Davis Sacramento Regional","al":[],"tier":"Deep Cut","p":85,"note":""},{"t":"El Paso Regional","al":[],"tier":"Deep Cut","p":85,"note":""},{"t":"Phantom Lakes Regional","al":[],"tier":"Deep Cut","p":85,"note":""},{"t":"East Bay Regional","al":[],"tier":"Deep Cut","p":85,"note":""},{"t":"Contra Costa Regional","al":[],"tier":"Deep Cut","p":85,"note":""},{"t":"Pinnacles Regional","al":[],"tier":"Deep Cut","p":85,"note":""},{"t":"Hueneme Port Regional","al":[],"tier":"Deep Cut","p":85,"note":""},{"t":"Western Michigan Regional","al":[],"tier":"Deep Cut","p":85,"note":"2002 name"},{"t":"UTC New England Regional","al":[],"tier":"Deep Cut","p":85,"note":""},{"t":"Johnson & Johnson Mid-Atlantic Regional","al":["J&J Mid-Atlantic","Mid-Atlantic Regional"],"tier":"Deep Cut","p":85,"note":""},{"t":"NASA Langley/VCU Regional","al":[],"tier":"Deep Cut","p":85,"note":""},{"t":"NASA Kennedy Space Center Regional","al":["KSC Southeast Regional"],"tier":"Deep Cut","p":85,"note":""},{"t":"Philadelphia Alliance Regional","al":["Philadelphia Alliance Open"],"tier":"Deep Cut","p":85,"note":""},{"t":"NASA Ames Regional","al":["NASA Ames California Open"],"tier":"Deep Cut","p":85,"note":""},{"t":"FIRST Southwest Regional","al":["FIRST Southwest Open"],"tier":"Deep Cut","p":85,"note":""},{"t":"GM/Technion Israel Pilot Regional","al":["Israel Pilot Regional"],"tier":"Deep Cut","p":85,"note":""},{"t":"Minnesota Regional","al":[],"tier":"Deep Cut","p":85,"note":"2008, before the Minnesota split"},{"t":"Brazil Regional","al":[],"tier":"Deep Cut","p":85,"note":"2008 event"},{"t":"Razorback Regional","al":[],"tier":"Deep Cut","p":85,"note":""},{"t":"Medtronic Foundation Regional","al":[],"tier":"Deep Cut","p":85,"note":"Verify: last seen 2018"},{"t":"Mexico City Regional","al":[],"tier":"Deep Cut","p":85,"note":"Verify: last seen 2016"},{"t":"Shenzhen Regional","al":[],"tier":"Deep Cut","p":85,"note":"Verify: last seen 2018"},{"t":"South Pacific Regional","al":[],"tier":"Deep Cut","p":85,"note":"Verify: last seen 2018"},{"t":"Australia Regional","al":[],"tier":"Deep Cut","p":85,"note":"Verify: last seen 2016"},{"t":"Central New York Regional","al":[],"tier":"Deep Cut","p":85,"note":"Verify: last seen 2018"},{"t":"Canadian Rockies Regional","al":[],"tier":"Deep Cut","p":85,"note":"Verify: last seen 2018"},{"t":"Western Canada Regional","al":["Western Canadian FRC Regional"],"tier":"Deep Cut","p":85,"note":"Verify"},{"t":"Phoenix Regional","al":[],"tier":"Deep Cut","p":85,"note":"Verify"},{"t":"Arizona Regional","al":[],"tier":"Deep Cut","p":85,"note":"Pre-split Arizona name"},{"t":"Hub City Regional","al":["Lubbock"],"tier":"One in a Krillion","p":100,"note":""},{"t":"Florida Regional","al":[],"tier":"Schooler","p":30,"note":"Renamed Orlando Regional: event still runs under a new name"},{"t":"Pittsburgh Regional","al":[],"tier":"Deep Cut","p":85,"note":"Renamed Greater Pittsburgh: event still runs under a new name"},{"t":"SBPLI Long Island Regional","al":[],"tier":"Deep Cut","p":85,"note":"Renamed FIRST Long Island: event still runs under a new name"},{"t":"Motorola Midwest Regional","al":[],"tier":"Deep Cut","p":85,"note":"Renamed Midwest Regional: event still runs under a new name"},{"t":"Oklahoma City Regional","al":[],"tier":"Deep Cut","p":85,"note":"Renamed Oklahoma Regional: event still runs under a new name"},{"t":"Montreal Regional","al":[],"tier":"Deep Cut","p":85,"note":"Renamed Festival de Robotique: event still runs under a new name"},{"t":"Arkansas Rock City Regional","al":[],"tier":"Deep Cut","p":85,"note":"Renamed Arkansas Regional: event still runs under a new name"},{"t":"Midwest Regional","al":[],"tier":"Wrong","p":0,"note":"Still held in 2026"},{"t":"St. Louis Regional","al":[],"tier":"Wrong","p":0,"note":"Still held in 2026"},{"t":"Hawaii Regional","al":[],"tier":"Wrong","p":0,"note":"Still held in 2026"},{"t":"Finger Lakes Regional","al":[],"tier":"Wrong","p":0,"note":"Still held in 2026"},{"t":"Orlando Regional","al":[],"tier":"Wrong","p":0,"note":"Still held in 2026"},{"t":"Bayou Regional","al":[],"tier":"Wrong","p":0,"note":"Still held in 2026"},{"t":"Buckeye Regional","al":[],"tier":"Wrong","p":0,"note":"Still held in 2026"}]},{"n":4,"prompt":"Name an FRC game element","team":false,"a":[{"t":"Note","al":[],"tier":"Plankton","p":10,"note":"2024"},{"t":"Coral","al":[],"tier":"Plankton","p":10,"note":"2025"},{"t":"Algae","al":[],"tier":"Plankton","p":10,"note":"2025"},{"t":"Cone","al":[],"tier":"Plankton","p":10,"note":"2023"},{"t":"Cube","al":["Power Cube"],"tier":"Plankton","p":10,"note":"2018 / 2023"},{"t":"Fuel","al":[],"tier":"Plankton","p":10,"note":"2017 / 2026"},{"t":"Cargo","al":[],"tier":"Plankton","p":10,"note":"2019 / 2022"},{"t":"Ball","al":[],"tier":"Plankton","p":10,"note":"Generic: many games used balls"},{"t":"Hatch Panel","al":["Hatch"],"tier":"Schooler","p":30,"note":"2019"},{"t":"Power Cell","al":[],"tier":"Schooler","p":30,"note":"2020-21"},{"t":"Gear","al":[],"tier":"Schooler","p":30,"note":"2017"},{"t":"Boulder","al":[],"tier":"Schooler","p":30,"note":"2016"},{"t":"Tote","al":[],"tier":"Schooler","p":30,"note":"2015"},{"t":"Frisbee","al":["Disc"],"tier":"Schooler","p":30,"note":"2013"},{"t":"Basketball","al":["Foam basketball"],"tier":"Schooler","p":30,"note":"2012"},{"t":"Recycling Container","al":["Recycling bin","can"],"tier":"Rare","p":60,"note":"2015"},{"t":"Pool Noodle","al":["Litter","noodle"],"tier":"Rare","p":60,"note":"2015"},{"t":"Ubertube","al":[],"tier":"Rare","p":60,"note":"2011"},{"t":"Logo tubes","al":["Triangle","circle","square tube"],"tier":"Rare","p":60,"note":"2011"},{"t":"Soccer ball","al":[],"tier":"Rare","p":60,"note":"1994 / 2010"},{"t":"Exercise ball","al":["Yoga ball"],"tier":"Rare","p":60,"note":"2014"},{"t":"Trackball","al":[],"tier":"Rare","p":60,"note":"2008"},{"t":"Inner tube","al":["Tube"],"tier":"Rare","p":60,"note":"1997 / 2007"},{"t":"Moon Rock","al":[],"tier":"Rare","p":60,"note":"2009"},{"t":"Empty Cell","al":[],"tier":"Deep Cut","p":85,"note":"2009"},{"t":"Super Cell","al":[],"tier":"Deep Cut","p":85,"note":"2009"},{"t":"Poof Ball","al":["Nerf ball"],"tier":"Deep Cut","p":85,"note":"2006"},{"t":"Keeper","al":[],"tier":"Deep Cut","p":85,"note":"2007"},{"t":"Ringer","al":[],"tier":"Deep Cut","p":85,"note":"2007"},{"t":"Spoiler","al":[],"tier":"Deep Cut","p":85,"note":"2007"},{"t":"Multiplier ball","al":["2x ball","doubler"],"tier":"Deep Cut","p":85,"note":"2004"},{"t":"Sterilite bin","al":["Bin","Stack Attack bin"],"tier":"Deep Cut","p":85,"note":"2003"},{"t":"Stretcher","al":[],"tier":"Deep Cut","p":85,"note":"2001"},{"t":"Floppy","al":["Floppies"],"tier":"Deep Cut","p":85,"note":"1999"},{"t":"Puck","al":[],"tier":"Deep Cut","p":85,"note":"1999"},{"t":"Tennis ball","al":["Treasure"],"tier":"Deep Cut","p":85,"note":"1992"},{"t":"Tetra","al":["Tetras"],"tier":"One in a Krillion","p":100,"note":"2005 Triple Play"}]},{"n":5,"prompt":"Name a team that won FIRST Championship somewhere other than Houston","team":true,"a":[{"t":"254","al":["The Cheesy Poofs"],"tier":"Plankton","p":10,"note":"2011, 2014, 2017 St. Louis"},{"t":"1678","al":["Citrus Circuits"],"tier":"Plankton","p":10,"note":"2015 St. Louis"},{"t":"118","al":["Robonauts"],"tier":"Plankton","p":10,"note":"2015 St. Louis"},{"t":"2767","al":["Stryke Force"],"tier":"Plankton","p":10,"note":"2017 St. Louis; 2018 Detroit"},{"t":"111","al":["WildStang"],"tier":"Plankton","p":10,"note":"2009 Atlanta; 2011 St. Louis (also 2003 Houston)"},{"t":"67","al":["The HOT Team"],"tier":"Plankton","p":10,"note":"2005, 2009, 2010 Atlanta"},{"t":"1114","al":["Simbotics"],"tier":"Plankton","p":10,"note":"2008 Atlanta"},{"t":"217","al":["ThunderChickens"],"tier":"Schooler","p":30,"note":"2006, 2008 Atlanta; 2019 Detroit"},{"t":"973","al":["Greybots"],"tier":"Schooler","p":30,"note":"2011 St. Louis"},{"t":"148","al":["Robowranglers"],"tier":"Schooler","p":30,"note":"1993 Nashua NH; 2008 Atlanta"},{"t":"330","al":["The Beach Bots"],"tier":"Schooler","p":30,"note":"2005 Atlanta; 2016 St. Louis"},{"t":"469","al":["Las Guerrillas"],"tier":"Schooler","p":30,"note":"2014 St. Louis (also 2003 Houston)"},{"t":"971","al":["Spartan Robotics"],"tier":"Schooler","p":30,"note":"2009 Atlanta"},{"t":"987","al":["HIGHROLLERS"],"tier":"Schooler","p":30,"note":"2007 Atlanta"},{"t":"177","al":["Bobcat Robotics"],"tier":"Schooler","p":30,"note":"2007, 2010 Atlanta"},{"t":"27","al":["Team RUSH"],"tier":"Schooler","p":30,"note":"2018 Detroit"},{"t":"3707","al":["Brighton TechnoDogs"],"tier":"Schooler","p":30,"note":"2019 Detroit"},{"t":"1241","al":["THEORY6"],"tier":"Schooler","p":30,"note":"2013 St. Louis"},{"t":"4481","al":["Team Rembrandts"],"tier":"Rare","p":60,"note":"2019 Detroit"},{"t":"1218","al":["SCH Vulcan Robotics"],"tier":"Rare","p":60,"note":"2019 Detroit"},{"t":"2708","al":["Lake Effect Robotics"],"tier":"Rare","p":60,"note":"2018 Detroit"},{"t":"4027","al":["Centre County 4-H Robotics"],"tier":"Rare","p":60,"note":"2018 Detroit"},{"t":"862","al":["Lightning Robotics"],"tier":"Rare","p":60,"note":"2017 St. Louis"},{"t":"1676","al":["The Pascack PI-oneers"],"tier":"Rare","p":60,"note":"2017 St. Louis"},{"t":"180","al":["S.P.A.M."],"tier":"Rare","p":60,"note":"2012 St. Louis"},{"t":"16","al":["Bomb Squad"],"tier":"Rare","p":60,"note":"2012 St. Louis"},{"t":"25","al":["Raider Robotix"],"tier":"Rare","p":60,"note":"2000 Orlando; 2012 St. Louis"},{"t":"294","al":["Beach Cities Robotics"],"tier":"Rare","p":60,"note":"2001 Orlando; 2010 Atlanta"},{"t":"71","al":["Team Hammond"],"tier":"Rare","p":60,"note":"1997, 2001, 2002 Orlando; 2004 Atlanta"},{"t":"503","al":["Frog Force"],"tier":"Rare","p":60,"note":"2005 Atlanta"},{"t":"190","al":["Gompei and the H.E.R.D."],"tier":"Rare","p":60,"note":"2007 Atlanta"},{"t":"2481","al":["Roboteers"],"tier":"Rare","p":60,"note":"2016 St. Louis"},{"t":"120","al":["Cleveland's Team"],"tier":"Rare","p":60,"note":"2016 St. Louis"},{"t":"1477","al":["Texas Torque"],"tier":"Deep Cut","p":85,"note":"2013 St. Louis"},{"t":"2848","al":["Rangers"],"tier":"Deep Cut","p":85,"note":"2014 St. Louis"},{"t":"74","al":["Team CHAOS"],"tier":"Deep Cut","p":85,"note":"2014 St. Louis"},{"t":"1671","al":["Buchanan Bird Brains"],"tier":"Deep Cut","p":85,"note":"2015 St. Louis"},{"t":"5012","al":["Gryffingear"],"tier":"Deep Cut","p":85,"note":"2015 St. Louis"},{"t":"1086","al":["Blue Cheese"],"tier":"Deep Cut","p":85,"note":"2016 St. Louis"},{"t":"296","al":["Northern Knights"],"tier":"Deep Cut","p":85,"note":"2006 Atlanta"},{"t":"522","al":["ROBO WIZARDS"],"tier":"Deep Cut","p":85,"note":"2006 Atlanta"},{"t":"435","al":["Robodogs"],"tier":"Deep Cut","p":85,"note":"2004 Atlanta"},{"t":"494","al":["Martians"],"tier":"Deep Cut","p":85,"note":"2004 Atlanta"},{"t":"365","al":["Miracle Workerz"],"tier":"Deep Cut","p":85,"note":"2001 Orlando"},{"t":"125","al":["NUTRONs"],"tier":"Deep Cut","p":85,"note":"2001 Orlando"},{"t":"279","al":["Tech Fusion"],"tier":"Deep Cut","p":85,"note":"2001 Orlando"},{"t":"66","al":["Grizzly Robotics"],"tier":"Deep Cut","p":85,"note":"2002 Orlando"},{"t":"173","al":["RAGE Robotics ⚙️"],"tier":"Deep Cut","p":85,"note":"2002 Orlando"},{"t":"232","al":[],"tier":"Deep Cut","p":85,"note":"2000 Orlando"},{"t":"255","al":[],"tier":"Deep Cut","p":85,"note":"2000 Orlando"},{"t":"1","al":["The Juggernauts"],"tier":"Deep Cut","p":85,"note":"1999 Orlando"},{"t":"48","al":["Team E.L.I.T.E."],"tier":"Deep Cut","p":85,"note":"1999 Orlando"},{"t":"176","al":["Aces High"],"tier":"Deep Cut","p":85,"note":"1999 Orlando"},{"t":"45","al":["TechnoKats Robotics Team"],"tier":"Deep Cut","p":85,"note":"1998 Orlando"},{"t":"73","al":["The Illumination"],"tier":"Deep Cut","p":85,"note":"1996 Orlando"},{"t":"100","al":["The WildHats"],"tier":"Deep Cut","p":85,"note":"1995 Orlando"},{"t":"144","al":["The R.O.C.K"],"tier":"Deep Cut","p":85,"note":"1994 Nashua NH"},{"t":"126","al":["Gael Force"],"tier":"Deep Cut","p":85,"note":"1992 Manchester NH"},{"t":"610","al":["Crescent Coyotes"],"tier":"One in a Krillion","p":100,"note":"2013 St. Louis"},{"t":"1323","al":["MadTown Robotics"],"tier":"Wrong","p":0,"note":"Won 2019, 2023, 2025, 2026 - all Houston"},{"t":"4414","al":["HighTide"],"tier":"Wrong","p":0,"note":"Won 2023, 2026 - Houston"},{"t":"1690","al":["Orbit"],"tier":"Wrong","p":0,"note":"Won 2024 - Houston"},{"t":"5026","al":["Iron Panthers"],"tier":"Wrong","p":0,"note":"Won 2019, 2025 - Houston"},{"t":"3175","al":["Knight Vision"],"tier":"Wrong","p":0,"note":"Won 2022 - Houston"},{"t":"1619","al":["Up-A-Creek Robotics"],"tier":"Wrong","p":0,"note":"Won 2022 - Houston"},{"t":"65","al":["The Huskie Brigade"],"tier":"Wrong","p":0,"note":"Won 2003 - Houston"},{"t":"1011","al":["CRUSH"],"tier":"Wrong","p":0,"note":"Won 2017 - Houston"},{"t":"4096","al":["Ctrl-Z"],"tier":"Wrong","p":0,"note":"Won 2023 - Houston"},{"t":"1538","al":["The Holy Cows"],"tier":"Wrong","p":0,"note":"Won 2026 - Houston"},{"t":"2910","al":["Jack in the Bot"],"tier":"Wrong","p":0,"note":"Won 2025 - Houston"},{"t":"321","al":["RoboLancers"],"tier":"Wrong","p":0,"note":"Won 2024 - Houston"}]},{"n":6,"prompt":"Name a team in the FRC Hall of Fame","team":true,"a":[{"t":"254","al":["Cheesy Poofs","The Cheesy Poofs"],"tier":"Plankton","p":10,"note":"Inducted 2004"},{"t":"1114","al":["Simbotics"],"tier":"Plankton","p":10,"note":"Inducted 2012"},{"t":"111","al":["WildStang"],"tier":"Plankton","p":10,"note":"Inducted 2006"},{"t":"67","al":["The HOT Team"],"tier":"Plankton","p":10,"note":"Inducted 2005"},{"t":"987","al":["HIGHROLLERS"],"tier":"Plankton","p":10,"note":"Inducted 2016"},{"t":"27","al":["Team RUSH"],"tier":"Plankton","p":10,"note":"Inducted 2014"},{"t":"1538","al":["The Holy Cows"],"tier":"Plankton","p":10,"note":"Inducted 2013"},{"t":"359","al":["Hawaiian Kids"],"tier":"Schooler","p":30,"note":"Inducted 2011"},{"t":"1902","al":["Exploding Bacon"],"tier":"Schooler","p":30,"note":"Inducted 2019"},{"t":"321","al":["RoboLancers"],"tier":"Schooler","p":30,"note":"Inducted 2023"},{"t":"503","al":["Frog Force"],"tier":"Schooler","p":30,"note":"Inducted 2021"},{"t":"4613","al":["Barker Redbacks"],"tier":"Schooler","p":30,"note":"Inducted 2021"},{"t":"16","al":["Bomb Squad"],"tier":"Schooler","p":30,"note":"Inducted 2000"},{"t":"365","al":["Miracle Workerz (MOE)","Miracle Workerz"],"tier":"Schooler","p":30,"note":"Inducted 2007"},{"t":"2486","al":["CocoNuts"],"tier":"Schooler","p":30,"note":"Inducted 2024"},{"t":"3132","al":["Thunder Down Under"],"tier":"Schooler","p":30,"note":"Inducted 2017"},{"t":"2614","al":["MARS","Mountaineer Area RoboticS (MARS)"],"tier":"Rare","p":60,"note":"Inducted 2017"},{"t":"1816","al":["The Green Machine","\"The Green Machine\""],"tier":"Rare","p":60,"note":"Inducted 2019"},{"t":"2834","al":["Bionic Black Hawks"],"tier":"Rare","p":60,"note":"Inducted 2018"},{"t":"1311","al":["Kell Robotics"],"tier":"Rare","p":60,"note":"Inducted 2018"},{"t":"1629","al":["Garrett Coalition (GaCo)"],"tier":"Rare","p":60,"note":"Inducted 2022"},{"t":"597","al":["The Wolverines"],"tier":"Rare","p":60,"note":"Inducted 2015"},{"t":"341","al":["Miss Daisy"],"tier":"Rare","p":60,"note":"Inducted 2010"},{"t":"236","al":["Techno-Ticks"],"tier":"Rare","p":60,"note":"Inducted 2009"},{"t":"842","al":["Falcon Robotics"],"tier":"Rare","p":60,"note":"Inducted 2008"},{"t":"5985","al":["Project Bucephalus"],"tier":"Rare","p":60,"note":"Inducted 2025"},{"t":"6352","al":["LAUNCH TEAM"],"tier":"Rare","p":60,"note":"Inducted 2026"},{"t":"175","al":["Buzz Robotics"],"tier":"Deep Cut","p":85,"note":"Inducted 2002"},{"t":"103","al":["Cybersonics"],"tier":"Deep Cut","p":85,"note":"Inducted 2003"},{"t":"22","al":["Double Deuce"],"tier":"Deep Cut","p":85,"note":"Inducted 2001"},{"t":"120","al":["Youth Tech Academy Red Dragons","Cleveland's Team"],"tier":"Deep Cut","p":85,"note":"Inducted 1999"},{"t":"23","al":["PNTA","PNTA Pilgrim Nuclear Technology Alliance"],"tier":"Deep Cut","p":85,"note":"Inducted 1998"},{"t":"47","al":["Chief Delphi"],"tier":"Deep Cut","p":85,"note":"Inducted 1997"},{"t":"144","al":["Operation Orange","The R.O.C.K"],"tier":"Deep Cut","p":85,"note":"Inducted 1996"},{"t":"151","al":["Tough Techs"],"tier":"Deep Cut","p":85,"note":"Inducted 1995"},{"t":"191","al":["X-CATS"],"tier":"Deep Cut","p":85,"note":"Inducted 1992, 1994"},{"t":"7","al":["The Labsters","Team007"],"tier":"One in a Krillion","p":100,"note":"Inducted 1993"},{"t":"1678","al":["Citrus Circuits"],"tier":"Wrong","p":0,"note":"Many Impact wins at regionals, never Championship (verify)"},{"t":"2056","al":["OP Robotics"],"tier":"Wrong","p":0,"note":"Never won Championship Impact (verify)"},{"t":"118","al":["Robonauts"],"tier":"Wrong","p":0,"note":"Never won Championship Impact (verify)"}]},{"n":7,"prompt":"Name a team that has won an FRC event in at least five different states","team":true,"a":[{"t":"254","al":["The Cheesy Poofs"],"tier":"Plankton","p":10,"note":"9 states: AZ, CA, FL, GA, HI, MO, NV, OR, TX"},{"t":"118","al":["Robonauts"],"tier":"Plankton","p":10,"note":"10 states: AL, AR, AZ, CA, CO, FL, IL, LA, MO, TX"},{"t":"1678","al":["Citrus Circuits"],"tier":"Plankton","p":10,"note":"5 states: CA, MO, NV, TX, UT"},{"t":"111","al":["WildStang"],"tier":"Plankton","p":10,"note":"9 states: FL, GA, IL, IN, MI, MN, MO, TX, WI"},{"t":"2056","al":["OP Robotics"],"tier":"Plankton","p":10,"note":"5 states: GA, MI, MO, NY, TX"},{"t":"1114","al":["Simbotics"],"tier":"Plankton","p":10,"note":"6 states: GA, IL, MI, MO, NY, PA"},{"t":"359","al":["Hawaiian Kids"],"tier":"Plankton","p":10,"note":"14 states: AZ, CA, HI, ID, IL, IN, MN, MO, NV, NY, PA, SC, TX, UT"},{"t":"16","al":["Bomb Squad"],"tier":"Schooler","p":30,"note":"10 states: AL, AR, FL, GA, IL, LA, MD, MO, OH, TX"},{"t":"125","al":["NUTRONs"],"tier":"Schooler","p":30,"note":"10 states: AZ, CT, FL, MA, ME, MO, NJ, NY, RI, TX"},{"t":"233","al":["The Pink Team"],"tier":"Schooler","p":30,"note":"10 states: CO, FL, GA, HI, LA, MA, MO, NY, OH, WA"},{"t":"987","al":["HIGHROLLERS"],"tier":"Schooler","p":30,"note":"7 states: AZ, CA, GA, MO, NV, TX, UT"},{"t":"148","al":["Robowranglers"],"tier":"Schooler","p":30,"note":"6 states: GA, IL, MO, NH, NV, TX"},{"t":"67","al":["The HOT Team"],"tier":"Schooler","p":30,"note":"6 states: GA, MI, MO, OH, PA, VA"},{"t":"27","al":["Team RUSH"],"tier":"Schooler","p":30,"note":"6 states: IL, MI, MO, NY, OH, PA"},{"t":"195","al":["CyberKnights"],"tier":"Schooler","p":30,"note":"7 states: CT, GA, MA, MI, MO, NY, VT"},{"t":"1619","al":["Up-A-Creek Robotics"],"tier":"Schooler","p":30,"note":"6 states: CO, ID, ND, OK, TX, UT"},{"t":"2122","al":["Team Tators"],"tier":"Schooler","p":30,"note":"8 states: AZ, CA, ID, MO, OK, TX, UT, WA"},{"t":"190","al":["Gompei and the H.E.R.D."],"tier":"Schooler","p":30,"note":"8 states: CA, GA, MA, ME, NJ, NY, RI, TX"},{"t":"469","al":["Las Guerrillas"],"tier":"Schooler","p":30,"note":"6 states: GA, MI, MO, NY, OH, TX"},{"t":"217","al":["ThunderChickens"],"tier":"Schooler","p":30,"note":"5 states: FL, GA, MI, MO, NY"},{"t":"6328","al":["Mechanical Advantage"],"tier":"Schooler","p":30,"note":"5 states: CT, MA, NH, RI, TX"},{"t":"180","al":["S.P.A.M."],"tier":"Schooler","p":30,"note":"5 states: AL, FL, MO, SC, TX"},{"t":"179","al":["Children of the Swamp"],"tier":"Schooler","p":30,"note":"6 states: AL, FL, GA, LA, SC, TX"},{"t":"2481","al":["Roboteers"],"tier":"Schooler","p":30,"note":"8 states: AL, AR, IL, MO, OK, TN, TX, WI"},{"t":"1986","al":["Team Titanium"],"tier":"Rare","p":60,"note":"9 states: CO, IL, KS, MN, MO, OH, OK, TX, WI"},{"t":"25","al":["Raider Robotix"],"tier":"Rare","p":60,"note":"8 states: FL, GA, MO, NJ, NV, PA, TX, VA"},{"t":"71","al":["Team Hammond"],"tier":"Rare","p":60,"note":"8 states: FL, GA, IL, IN, MI, MN, MO, TN"},{"t":"177","al":["Bobcat Robotics"],"tier":"Rare","p":60,"note":"7 states: CT, FL, GA, MA, MO, NH, PA"},{"t":"175","al":["Buzz Robotics"],"tier":"Rare","p":60,"note":"7 states: CT, GA, MA, MD, NH, NJ, TX"},{"t":"48","al":["Team E.L.I.T.E."],"tier":"Rare","p":60,"note":"7 states: FL, IL, NC, OH, PA, TN, WI"},{"t":"5687","al":["The Outliers"],"tier":"Rare","p":60,"note":"7 states: CT, MA, ME, MO, NH, RI, VT"},{"t":"1625","al":["Winnovation"],"tier":"Rare","p":60,"note":"7 states: AR, CO, GA, IL, MN, MO, WI"},{"t":"173","al":["RAGE Robotics ⚙️"],"tier":"Rare","p":60,"note":"6 states: CT, FL, GA, MA, MD, NY"},{"t":"245","al":["Adambots"],"tier":"Rare","p":60,"note":"6 states: CA, GA, IL, MI, OH, SC"},{"t":"340","al":["G.R.R. (Greater Rochester Robotics)"],"tier":"Rare","p":60,"note":"6 states: FL, GA, NJ, NY, OH, PA"},{"t":"343","al":["Metal-In-Motion"],"tier":"Rare","p":60,"note":"6 states: FL, GA, MO, SC, TX, VA"},{"t":"1519","al":["Mechanical Mayhem"],"tier":"Rare","p":60,"note":"6 states: CT, MA, ME, MO, NC, NH"},{"t":"1730","al":["Team Driven"],"tier":"Rare","p":60,"note":"6 states: CO, IN, MO, OK, TN, TX"},{"t":"2451","al":["PWNAGE"],"tier":"Rare","p":60,"note":"6 states: AR, IL, MN, MO, OH, TN"},{"t":"2614","al":["Mountaineer Area RoboticS (MARS)"],"tier":"Rare","p":60,"note":"6 states: MI, NY, OH, PA, SC, TN"},{"t":"6329","al":["The Bucks' Wrath"],"tier":"Rare","p":60,"note":"5 states: MA, ME, NH, RI, TX"},{"t":"1706","al":["Ratchet Rockers"],"tier":"Rare","p":60,"note":"5 states: IA, KS, MO, OK, TX"},{"t":"2338","al":["Gear It Forward"],"tier":"Rare","p":60,"note":"5 states: AL, IL, MO, OH, WI"},{"t":"4499","al":["The Highlanders"],"tier":"Rare","p":60,"note":"5 states: AL, AR, CO, MO, TX"},{"t":"33","al":["Killer Bees"],"tier":"Rare","p":60,"note":"5 states: FL, GA, MI, MO, VA"},{"t":"1218","al":["SCH Vulcan Robotics"],"tier":"Rare","p":60,"note":"5 states: GA, MD, MI, NJ, PA"},{"t":"341","al":["Miss Daisy"],"tier":"Rare","p":60,"note":"5 states: CA, MA, NY, PA, TX"},{"t":"868","al":["TechHOUNDS"],"tier":"Rare","p":60,"note":"5 states: GA, IN, MI, OH, TX"},{"t":"2590","al":["Nemesis"],"tier":"Rare","p":60,"note":"5 states: MO, NJ, NY, PA, TX"},{"t":"2974","al":["Walton Robotics"],"tier":"Rare","p":60,"note":"5 states: FL, GA, NC, SC, TN"},{"t":"1732","al":["Hilltoppers"],"tier":"Rare","p":60,"note":"5 states: IL, MN, MO, OH, WI"},{"t":"45","al":["TechnoKats Robotics Team"],"tier":"Deep Cut","p":85,"note":"5 states: FL, IL, IN, MO, OH"},{"t":"47","al":["Chief Delphi"],"tier":"Deep Cut","p":85,"note":"5 states: IL, MI, NH, NY, TX"},{"t":"60","al":["Bionic Bulldogs"],"tier":"Deep Cut","p":85,"note":"5 states: AZ, CA, FL, GA, NV"},{"t":"64","al":["Gila Monsters"],"tier":"Deep Cut","p":85,"note":"5 states: CA, FL, GA, NV, VA"},{"t":"121","al":["Rhode Warriors"],"tier":"Deep Cut","p":85,"note":"5 states: CT, GA, MA, NH, PA"},{"t":"133","al":["B.E.R.T."],"tier":"Deep Cut","p":85,"note":"5 states: MA, ME, MI, NH, NJ"},{"t":"192","al":["GRT"],"tier":"Deep Cut","p":85,"note":"5 states: AZ, ID, MD, TX, UT"},{"t":"368","al":["Team Kika Mana"],"tier":"Deep Cut","p":85,"note":"5 states: CA, HI, MO, OR, WA"},{"t":"494","al":["Martians"],"tier":"Deep Cut","p":85,"note":"5 states: GA, MI, NY, OH, TX"},{"t":"555","al":["Montclair Robotics"],"tier":"Deep Cut","p":85,"note":"5 states: AZ, CO, NJ, NY, PA"},{"t":"624","al":["CRyptonite"],"tier":"Deep Cut","p":85,"note":"5 states: CO, LA, MO, TX, UT"},{"t":"935","al":["RaileRobotics"],"tier":"Deep Cut","p":85,"note":"5 states: CO, KS, MO, OK, TX"},{"t":"1024","al":["Kil-A-Bytes"],"tier":"Deep Cut","p":85,"note":"5 states: GA, IL, IN, MI, OH"},{"t":"1058","al":["PVC Pirates"],"tier":"Deep Cut","p":85,"note":"5 states: MA, MO, NH, RI, TX"},{"t":"2016","al":["Mighty Monkey Wrenches"],"tier":"Deep Cut","p":85,"note":"5 states: MD, MO, NJ, PA, TX"},{"t":"2168","al":["Aluminum Falcons"],"tier":"Deep Cut","p":85,"note":"5 states: CT, MA, NJ, PA, RI"},{"t":"4635","al":["Botbusters"],"tier":"One in a Krillion","p":100,"note":"5 states: AL, AR, LA, OK, WI"}]}];
+const SECS = 25, TIERS = ["Plankton","Schooler","Rare","Deep Cut","One in a Krillion"];
+const EMO = {"Plankton":"🦐","Schooler":"🐟","Rare":"💎","Deep Cut":"🌊","One in a Krillion":"⭐","Wrong":"⚠️","Miss":"⬛"};
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const cls = t => "t-" + String(t).replace(/[^A-Za-z]/g, "");
+const STOP = /\b(the|regional|motor|motors|team|frc|robotics)\b/g;
+const norm = s => String(s).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/&/g, " and ").replace(STOP, " ").replace(/[^a-z0-9]/g, "");
+function lev(a, b) {
+  if (Math.abs(a.length - b.length) > 2) return 9;
+  let p = Array.from({length: b.length + 1}, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    const c = [i];
+    for (let j = 1; j <= b.length; j++) c[j] = Math.min(p[j] + 1, c[j - 1] + 1, p[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    p = c;
+  }
+  return p[b.length];
+}
+DATA.forEach(q => q.a.forEach(a => { a.keys = [...new Set([a.t, ...a.al].map(norm).filter(Boolean))]; }));
+
+function judge(q, raw) {
+  const text = raw.trim();
+  if (!text) return {tier: "Miss", p: 0, match: "", note: "No answer"};
+  if (q.team) {
+    const m = text.match(/^\s*(?:team|frc)?\s*#?\s*(\d{1,5})\b/i);
+    if (m) {
+      const a = q.a.find(x => x.t === String(+m[1]));
+      return a ? hit(a) : {tier: "Miss", p: 0, match: "", note: "Team " + (+m[1]) + " isn't on the list"};
+    }
+  }
+  const n = norm(text);
+  if (!n) return {tier: "Miss", p: 0, match: "", note: "Not on the list"};
+  let best = null, bd = 9;
+  const forms = [n]; if (n.length > 3 && n.endsWith("s")) forms.push(n.slice(0, -1)); if (n.length > 4 && n.endsWith("es")) forms.push(n.slice(0, -2));
+  for (const a of q.a) for (const k of a.keys) if (forms.includes(k)) return hit(a);
+  for (const a of q.a) for (const k of a.keys) {
+    const lim = k.length >= 9 ? 2 : k.length >= 5 ? 1 : 0;
+    if (!lim) continue;
+    const d = lev(n, k);
+    if (d <= lim && d < bd) { bd = d; best = a; }
+  }
+  return best ? hit(best) : {tier: "Miss", p: 0, match: "", note: "Not on the list"};
+}
+function hit(a) {
+  const label = a.al.length && /^\d+$/.test(a.t) ? a.t + " " + a.al[0] : a.t;
+  return {tier: a.tier, p: a.p, match: label, note: a.note};
+}
+
+const state = {i: 0, name: "", res: [], left: SECS, tick: null, locked: false};
+/* ---------- pictures ---------- */
+{
+  let g = "";
+  for (let i = 0; i < 46; i++) {
+    const x = (i * 97) % 800, y = 40 + (i * 53) % 190, r = 2 + (i % 3);
+    g += `<ellipse cx="${x}" cy="${y}" rx="${r * 2.2}" ry="${r}" fill="url(#k)" opacity="${.45 + (i % 5) / 10}" transform="rotate(${(i * 37) % 60 - 30} ${x} ${y})"/>`;
+  }
+  $("swarm").innerHTML = g;
+}
+function drawGauge(step) {
+  const s = $("gauge"), W = s.clientWidth, H = s.clientHeight, narrow = H < 160;
+  let out = "";
+  if (narrow) {
+    for (let i = 0; i < 7; i++) {
+      const x = 20 + i * (W - 40) / 6, done = i < step, cur = i === step;
+      out += `<circle cx="${x}" cy="${H / 2}" r="${cur ? 13 : 9}" fill="${done ? "#ff7a59" : cur ? "#ffd166" : "rgba(255,255,255,.18)"}"/>`;
+      out += `<text x="${x}" y="${H / 2 + 5}" text-anchor="middle" font-size="13" font-weight="700" fill="#071e26">${i + 1}</text>`;
+    }
+  } else {
+    for (let i = 0; i < 7; i++) {
+      const y = 36 + i * (H - 72) / 6, done = i < step, cur = i === step;
+      out += `<line x1="18" x2="${W - 18}" y1="${y}" y2="${y}" stroke="rgba(255,255,255,.12)"/>`;
+      out += `<text x="18" y="${y - 8}" font-size="12" fill="#9cc3c9">${(i + 1) * 1000} m</text>`;
+      out += `<circle cx="${W - 30}" cy="${y}" r="${cur ? 12 : 8}" fill="${done ? "#ff7a59" : cur ? "#ffd166" : "rgba(255,255,255,.16)"}"/>`;
+    }
+  }
+  s.innerHTML = out;
+}
+const gaugeRO = new ResizeObserver(() => drawGauge(state.i));
+gaugeRO.observe($("gauge"));
+$("tierKey").innerHTML = TIERS.map((t, i) => `<span class="chip ${cls(t)}">${t} · ${[10,30,60,85,100][i]}</span>`).join("");
+
+/* ---------- game ---------- */
+try { $("name").value = localStorage.getItem("frck-name") || ""; } catch (e) {}
+function show(id) { for (const s of ["start", "game", "results"]) $(s).classList.toggle("hide", s !== id); window.scrollTo(0, 0); }
+
+$("nameForm").addEventListener("submit", e => {
+  e.preventDefault();
+  const n = $("name").value.trim().slice(0, 30);
+  if (!n) return;
+  state.name = n; state.i = 0; state.res = [];
+  try { localStorage.setItem("frck-name", n); } catch (e) {}
+  show("game"); ask();
+});
+function ask() {
+  const q = DATA[state.i];
+  state.locked = false; state.left = SECS;
+  $("qnum").textContent = `Prompt ${state.i + 1} of ${DATA.length}`;
+  $("prompt").textContent = q.prompt;
+  $("ans").value = ""; $("ans").disabled = false; $("submit").disabled = false;
+  $("reveal").classList.add("hide"); $("tryMsg").classList.add("hide");
+  drawGauge(state.i); paintTimer();
+  $("ans").focus();
+  clearInterval(state.tick);
+  state.tick = setInterval(() => { state.left -= .1; paintTimer(); if (state.left <= 0) answer(true); }, 100);
+}
+function paintTimer() {
+  const f = Math.max(0, state.left) / SECS;
+  $("bar").style.width = (f * 100) + "%";
+  $("bar").style.background = f < .25 ? "#ff6b7f" : "#ff7a59";
+  $("secs").textContent = Math.ceil(Math.max(0, state.left)) + " s";
+}
+$("ansForm").addEventListener("submit", e => { e.preventDefault(); if (!state.locked) answer(false); else next(); });
+function answer(timedOut) {
+  if (state.locked) return;
+  const q = DATA[state.i], input = $("ans").value.slice(0, 60);
+  let r = judge(q, input);
+  const ok = r.tier !== "Miss" && r.tier !== "Wrong";
+  if (!ok && !timedOut) {
+    $("tryMsg").textContent = !input.trim() ? "Type an answer first." :
+      (r.tier === "Wrong" ? "Not accepted: " + r.note + ". Keep trying." : "That's not an accepted answer. Keep trying.");
+    $("tryMsg").classList.remove("hide");
+    $("ans").select();
+    return;
+  }
+  clearInterval(state.tick);
+  state.locked = true;
+  if (!ok) r = {tier: "Miss", p: 0, match: "", note: "Time's up"};
+  state.res.push({q: q.n, input, ...r});
+  $("ans").disabled = true; $("submit").disabled = true;
+  $("tryMsg").classList.add("hide");
+  const last = state.i === DATA.length - 1;
+  $("reveal").innerHTML = `<div class="row" style="justify-content:space-between"><span class="chip ${cls(r.tier)}">${r.tier === "Miss" ? "Time's up" : esc(r.tier)}</span><span class="big">+${r.p}</span></div>
+    <p style="margin:10px 0 4px">${r.match ? "<b>" + esc(r.match) + "</b>" : "No points this time"}${r.note && r.match ? " · <span class='muted'>" + esc(r.note) + "</span>" : ""}</p>
+    <button type="button" id="nextBtn" style="margin-top:8px">${last ? "See results" : "Next prompt"}</button>`;
+  $("reveal").classList.remove("hide");
+  $("nextBtn").addEventListener("click", next);
+  $("nextBtn").focus();
+}
+function next() {
+  state.i++;
+  if (state.i < DATA.length) ask(); else finish();
+}
+
+/* ---------- results ---------- */
+let myRunId = null;
+function finish() {
+  const total = state.res.reduce((s, r) => s + r.p, 0);
+  $("resName").textContent = state.name + "'s dive";
+  $("total").textContent = total;
+  $("mine").innerHTML = state.res.map((r, i) => `<tr><td data-l="#">${i + 1}</td><td data-l="Prompt">${esc(DATA[i].prompt)}</td><td data-l="Your answer">${esc(r.match || r.input || "—")}</td><td data-l="Tier"><span class="chip ${cls(r.tier)}">${esc(r.tier === "Miss" ? "Time's up" : r.tier)}</span></td><td class="r" data-l="Pts">${r.p}</td></tr>`).join("");
+  $("gems").innerHTML = DATA.map(q => {
+    const gem = q.a.find(a => a.tier === "One in a Krillion"), deep = q.a.filter(a => a.tier === "Deep Cut").slice(0, 2);
+    const lab = a => /^\d+$/.test(a.t) && a.al.length ? a.t + " " + a.al[0] : a.t;
+    return `<li><b>${esc(q.prompt)}:</b> <span class="chip t-OneinaKrillion">${esc(gem ? lab(gem) : "—")}</span> <span class="muted">Deep cuts: ${deep.map(a => esc(lab(a))).join(", ")}</span></li>`;
+  }).join("");
+  show("results");
+  saveRun(total);
+}
+function shareText() {
+  const total = state.res.reduce((s, r) => s + r.p, 0);
+  return `FRC Krillion · ${state.name} · ${total}/700\n` + state.res.map(r => EMO[r.tier] || "⬛").join("");
+}
+$("copy").addEventListener("click", async () => {
+  try { await navigator.clipboard.writeText(shareText()); $("copy").textContent = "Copied"; }
+  catch (e) { $("copy").textContent = "Copy blocked"; }
+  setTimeout(() => $("copy").textContent = "Copy result", 1800);
+});
+$("again").addEventListener("click", () => { show("start"); $("name").focus(); });
+
+/* ---------- shared leaderboard (Google Sheet via Apps Script) ---------- */
+let allRuns = [], polling = null;
+function renderBoards(msg) {
+  if (msg) { $("board").textContent = msg; $("boardStart").textContent = msg; return; }
+  const runs = allRuns.slice().sort((a, b) => b.total - a.total || String(a.at).localeCompare(String(b.at)));
+  if (!runs.length) { $("board").textContent = "No scores yet. Be the first."; $("boardStart").textContent = "No scores yet. Be the first."; return; }
+  const row = (r, i) => {
+    const dots = `<span class="dots">${(r.ans || []).map(a => `<b class="${cls(a.tier)}" title="${esc(a.tier)}"></b>`).join("")}</span>`;
+    const rows = (r.ans || []).map((a, j) => `<tr><td data-l="Prompt">${esc(DATA[j] ? DATA[j].prompt : "")}</td><td data-l="Answer">${esc(a.match || a.input || "—")}</td><td data-l="Tier"><span class="chip ${cls(a.tier)}">${esc(a.tier === "Miss" ? "Time's up" : a.tier)}</span></td><td class="r" data-l="Pts">${+a.p || 0}</td></tr>`).join("");
+    const when = r.at ? new Date(r.at).toLocaleDateString(undefined, {month: "short", day: "numeric"}) : "";
+    return `<details><summary><span class="muted">${i + 1}</span><span class="nm ${r.id === myRunId ? "me" : ""}">${esc(r.name)} <span class="muted" style="font-weight:400">${esc(when)}</span></span>${dots}<span class="num">${+r.total || 0}</span></summary>
+      <table class="stack" style="margin:4px 0 12px"><thead><tr><th>Prompt</th><th>Answer</th><th>Tier</th><th class="r">Pts</th></tr></thead><tbody>${rows}</tbody></table></details>`;
+  };
+  $("board").innerHTML = runs.map(row).join("");
+  $("boardStart").innerHTML = runs.slice(0, 5).map(row).join("") + (runs.length > 5 ? `<p class="muted">${runs.length} dives so far. Finish a dive to see them all.</p>` : "");
+}
+function clean(list) {
+  return (Array.isArray(list) ? list : []).filter(r => r && typeof r === "object").map(r => ({
+    id: String(r.id || ""), name: String(r.name || "Someone").slice(0, 30), total: Math.max(0, Math.min(700, +r.total || 0)), at: r.at,
+    ans: (Array.isArray(r.ans) ? r.ans : []).slice(0, 7).map(a => ({input: String(a.input || "").slice(0, 60), match: String(a.match || "").slice(0, 80), tier: String(a.tier || "Miss"), p: +a.p || 0}))}));
+}
+async function loadScores() {
+  if (!SCORES_URL) { renderBoards("The shared leaderboard isn't set up yet (see README)."); return; }
+  try {
+    const res = await fetch(SCORES_URL + "?t=" + Date.now());
+    const json = await res.json();
+    allRuns = clean(json.runs); renderBoards();
+  } catch (e) { if (!allRuns.length) renderBoards("Can't reach the scores right now."); }
+}
+async function saveRun(total) {
+  const run = {id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7), name: state.name, total, at: new Date().toISOString(),
+    ans: state.res.map(r => ({input: r.input, match: r.match, tier: r.tier, p: r.p}))};
+  myRunId = run.id;
+  allRuns = allRuns.filter(r => r.id !== run.id).concat(clean([run])); renderBoards();
+  if (!SCORES_URL) { $("saveMsg").textContent = "Scores aren't being saved yet: the leaderboard hasn't been set up."; return; }
+  $("saveMsg").textContent = "Saving your score…";
+  try {
+    const res = await fetch(SCORES_URL, {method: "POST", headers: {"Content-Type": "text/plain;charset=utf-8"}, body: JSON.stringify(run)});
+    const json = await res.json();
+    if (!json.ok) throw new Error(json.error || "rejected");
+    $("saveMsg").textContent = "Saved to the leaderboard.";
+  } catch (e) { $("saveMsg").textContent = "Your score couldn't be saved right now. Try Dive again later."; }
+  loadScores();
+}
+loadScores();
+polling = setInterval(() => { if (!document.hidden && $("game").classList.contains("hide")) loadScores(); }, 30000);
+}
+</script>
+</body>
+</html>
